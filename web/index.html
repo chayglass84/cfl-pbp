@@ -241,7 +241,7 @@ $('#clear').onclick = () => {
 };
 $$('.filters select, #f-down input, #group-by input, #excl-flagged').forEach(i => i.addEventListener('change', render));
 
-fetch('/plays.json').then(r => r.json()).then(rows => {
+fetch('plays.json').then(r => r.json()).then(rows => {
   ALL = rows;
   const uniq = k => [...new Set(ALL.map(r => r[k]).filter(v => v != null))].sort();
   fillSelect('#f-offense', uniq('offense')); fillSelect('#f-defense', uniq('defense'));

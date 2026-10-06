@@ -1,0 +1,3 @@
+# Static site: no build step, the explorer in web/ plus web/plays.json (see export_static.py).
+[build]
+  publish = "web"

@@ -9,6 +9,7 @@ SQLite DB, with a small web UI for filtering, grouping and success-rate summarie
 python discover.py      # find completed 2026 games      -> data/games_2026.json
 python load_db.py       # scrape + parse + load           -> data/cfl.db (raw responses cached in data/raw/)
 python serve.py         # explorer at http://localhost:8765
+python export_static.py # refresh web/plays.json (the static/Netlify copy of the data); commit + push to redeploy
 python scrape.py <cfl.ca game URL | fixtureId>   # one game -> filterable report_<id>.html with validation
 ```
 Python 3 standard library only.
@@ -17,3 +18,6 @@ Python 3 standard library only.
 Each game is checked against the feed's official team stats and the final score (`games.stat_check`,
 `games.points_check`). Plays that parse but look off carry a `flags` value (`gap_before`, `spot_mismatch`, ...);
 plays that can't be categorised at all go to `skipped_plays`. `data/` is not committed — rebuild it with the commands above.
+
+## Hosting
+`web/` is a static site (`netlify.toml` publishes it). After reloading the DB, run `python export_static.py`, commit and push; Netlify redeploys.
