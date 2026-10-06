@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CFL 2026 play explorer</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1c2430; --mute:#6b7685; --line:#dde2e9; --accent:#b5262f; --accent-soft:#f7e3e4; --good:#1a8f55; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14181e; --card:#1c222a; --ink:#e6eaf0; --mute:#8d98a8; --line:#2f3844; --accent:#e5505a; --accent-soft:#3a2326; --good:#44c58a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding:16px 24px 4px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  h1 { font-size:20px; margin:0; }
+  header small { color:var(--mute); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; margin:12px 24px; padding:14px 16px; }
+  .filters { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px 16px; align-items:end; }
+  label.f { display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; }
+  select { font:inherit; font-size:14px; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:6px; padding:5px 6px; text-transform:none; letter-spacing:0; }
+  .group { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; }
+  .group .opts { display:flex; gap:10px; flex-wrap:wrap; text-transform:none; letter-spacing:0; font-size:14px; color:var(--ink); }
+  .group .opts label { display:flex; align-items:center; gap:4px; cursor:pointer; }
+  .row2 { margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:14px 24px; align-items:end; }
+  .slider .top { display:flex; justify-content:space-between; font-size:12px; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; }
+  .slider .top b { color:var(--ink); text-transform:none; letter-spacing:0; font-size:13px; }
+  .dual { position:relative; height:22px; }
+  .dual .track { position:absolute; left:0; right:0; top:9px; height:4px; background:var(--line); border-radius:2px; }
+  .dual .fill { position:absolute; top:9px; height:4px; background:var(--accent); border-radius:2px; }
+  .dual input[type=range] { position:absolute; left:0; width:100%; top:0; margin:0; height:22px; background:none; pointer-events:none; -webkit-appearance:none; appearance:none; }
+  .dual input[type=range]::-webkit-slider-thumb { pointer-events:auto; -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--accent); border:2px solid var(--card); box-shadow:0 0 0 1px var(--accent); cursor:grab; }
+  .dual input[type=range]::-moz-range-thumb { pointer-events:auto; width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid var(--card); cursor:grab; }
+  .dual input[type=range]::-webkit-slider-runnable-track { background:none; }
+  .dual input[type=range]::-moz-range-track { background:none; }
+  .bar { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
+  button { font:inherit; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:6px; padding:4px 12px; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  .bar label { display:flex; gap:5px; align-items:center; cursor:pointer; }
+  .bar .count { margin-left:auto; color:var(--mute); }
+  .tabs { display:flex; gap:2px; margin:16px 24px 0; border-bottom:1px solid var(--line); }
+  .tab { border:none; border-bottom:3px solid transparent; border-radius:0; background:none; padding:8px 16px; color:var(--mute); font-weight:600; }
+  .tab.on { color:var(--ink); border-bottom-color:var(--accent); }
+  .empty { padding:40px 20px; text-align:center; color:var(--mute); }
+  .empty b { color:var(--ink); }
+  table { border-collapse:collapse; width:100%; }
+  th, td { padding:6px 10px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { position:sticky; top:0; background:var(--card); cursor:pointer; user-select:none; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--mute); }
+  th.sorted { color:var(--ink); }
+  td.n, th.n { text-align:right; font-variant-numeric:tabular-nums; }
+  td.desc { white-space:normal; min-width:380px; color:var(--mute); }
+  tr.total td { font-weight:700; border-top:2px solid var(--line); }
+  .pct { display:inline-block; position:relative; min-width:120px; text-align:right; }
+  .pct i { position:absolute; left:0; top:2px; bottom:2px; background:var(--accent-soft); border-radius:3px; z-index:0; }
+  .pct span { position:relative; z-index:1; padding-right:4px; }
+  .low { color:var(--mute); }
+  .flag { color:var(--accent); font-size:12px; }
+  .scroll { overflow:auto; max-height:70vh; }
+  .note { color:var(--mute); font-size:12px; margin-top:8px; }
+</style>
+</head>
+<body>
+<header><h1>CFL 2026 play explorer</h1><small id="meta">loading…</small></header>
+
+<section class="card" id="filters">
+  <div class="filters">
+    <label class="f">Offensive team<select id="f-offense"></select></label>
+    <label class="f">Defensive team<select id="f-defense"></select></label>
+    <label class="f">Quarter<select id="f-qtr"></select></label>
+    <label class="f">QB<select id="f-qb"></select></label>
+    <label class="f">Ballcarrier / target<select id="f-ballcarrier"></select></label>
+    <div class="group">Down
+      <div class="opts" id="f-down">
+        <label><input type="checkbox" value="1" checked>1st</label>
+        <label><input type="checkbox" value="2" checked>2nd</label>
+        <label><input type="checkbox" value="3" checked>3rd</label>
+      </div>
+    </div>
+  </div>
+  <div class="row2">
+    <div class="slider" id="s-distance" data-min="0" data-max="30" data-field="distance" data-label="Distance (yds to go)" data-open-top="1"></div>
+    <div class="slider" id="s-yardline" data-min="0" data-max="110" data-field="own_yd" data-label="Yardline (yds from own goal line)"></div>
+    <div class="group">Group by
+      <div class="opts" id="group-by">
+        <label><input type="checkbox" value="offense">Offense</label>
+        <label><input type="checkbox" value="defense">Defense</label>
+        <label><input type="checkbox" value="qtr">Quarter</label>
+        <label><input type="checkbox" value="qb">QB</label>
+        <label><input type="checkbox" value="ballcarrier">Ballcarrier</label>
+      </div>
+    </div>
+  </div>
+  <div class="bar">
+    <button id="clear">Clear all</button>
+    <label><input type="checkbox" id="excl-flagged" checked> Exclude plays flagged as sketchy</label>
+    <span class="count" id="count"></span>
+  </div>
+</section>
+
+<nav class="tabs">
+  <button class="tab on" data-tab="summary">Summary</button>
+  <button class="tab" data-tab="table">Play table</button>
+</nav>
+
+<section class="card" id="view-summary"></section>
+<section class="card" id="view-table" hidden></section>
+
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+let ALL = [], tab = 'summary';
+let sortS = {k:'n', dir:-1}, sortT = {k:null, dir:1};
+const GROUPS = {offense:'Offense', defense:'Defense', qtr:'Qtr', qb:'QB', ballcarrier:'Ballcarrier'};
+const sliders = {};
+
+function qtrLabel(q){ return q === 5 ? 'OT' : 'Q' + q; }
+
+/* ---------- dual-range sliders ---------- */
+$$('.slider').forEach(el => {
+  const min = +el.dataset.min, max = +el.dataset.max, open = !!el.dataset.openTop;
+  el.innerHTML = `<div class="top"><span>${el.dataset.label}</span><b></b></div>
+    <div class="dual"><div class="track"></div><div class="fill"></div>
+    <input type="range" min="${min}" max="${max}" value="${min}"><input type="range" min="${min}" max="${max}" value="${max}"></div>`;
+  const [a, b] = el.querySelectorAll('input'), fill = el.querySelector('.fill'), out = el.querySelector('b');
+  const s = sliders[el.id] = { el, min, max, open, field: el.dataset.field,
+    lo: () => Math.min(+a.value, +b.value), hi: () => Math.max(+a.value, +b.value),
+    active: () => s.lo() > min || s.hi() < max, reset(){ a.value = min; b.value = max; draw(); } };
+  const draw = () => {
+    const lo = s.lo(), hi = s.hi(), span = max - min;
+    fill.style.left = (lo - min) / span * 100 + '%'; fill.style.width = (hi - lo) / span * 100 + '%';
+    out.textContent = `${lo} – ${hi}${open && hi === max ? '+' : ''}`;
+  };
+  [a, b].forEach(i => i.addEventListener('input', () => { draw(); render(); }));
+  draw();
+});
+
+/* ---------- state ---------- */
+function state(){
+  return {
+    sel: Object.fromEntries(['offense','defense','qtr','qb','ballcarrier'].map(k => [k, $('#f-' + k).value])),
+    downs: $$('#f-down input:checked').map(i => +i.value),
+    groups: $$('#group-by input:checked').map(i => i.value),
+    exclFlagged: $('#excl-flagged').checked,
+  };
+}
+function isActive(st){
+  return Object.values(st.sel).some(v => v) || st.downs.length < 3 || sliders['s-distance'].active() || sliders['s-yardline'].active();
+}
+function filtered(st){
+  const d = sliders['s-distance'], y = sliders['s-yardline'];
+  return ALL.filter(r =>
+    (!st.sel.offense || r.offense === st.sel.offense) && (!st.sel.defense || r.defense === st.sel.defense) &&
+    (!st.sel.qtr || String(r.qtr) === st.sel.qtr) && (!st.sel.qb || r.qb === st.sel.qb) &&
+    (!st.sel.ballcarrier || r.ballcarrier === st.sel.ballcarrier) &&
+    st.downs.includes(r.down) &&
+    r.distance >= d.lo() && (r.distance <= d.hi() || (d.open && d.hi() === d.max)) &&
+    r.own_yd >= y.lo() && r.own_yd <= y.hi() &&
+    !(st.exclFlagged && r.flags));
+}
+
+/* ---------- rendering ---------- */
+function median(a){ const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+const fmt = (x, d = 1) => x.toFixed(d);
+const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const groupVal = (r, k) => k === 'qtr' ? qtrLabel(r.qtr) : (r[k] ?? '—');
+
+function summarize(rows, keys){
+  const m = new Map();
+  for (const r of rows) {
+    const id = keys.map(k => groupVal(r, k)).join('\u0001');
+    if (!m.has(id)) m.set(id, { vals: keys.map(k => groupVal(r, k)), ys: [], succ: 0 });
+    const g = m.get(id); g.ys.push(r.yards); g.succ += r.success;
+  }
+  return [...m.values()].map(g => ({ vals: g.vals, n: g.ys.length, pct: g.succ / g.ys.length * 100,
+    mean: g.ys.reduce((a, b) => a + b, 0) / g.ys.length, median: median(g.ys) }));
+}
+
+function renderSummary(st, rows){
+  const el = $('#view-summary'), keys = st.groups;
+  let out = summarize(rows, keys);
+  const k = sortS.k;
+  out.sort((a, b) => {
+    const av = k.startsWith('g') ? a.vals[+k.slice(1)] : a[k], bv = k.startsWith('g') ? b.vals[+k.slice(1)] : b[k];
+    return (av > bv ? 1 : av < bv ? -1 : 0) * sortS.dir;
+  });
+  const total = summarize(rows, [])[0];
+  const th = (key, label, cls = '') => `<th data-s="${key}" class="${cls} ${sortS.k === key ? 'sorted' : ''}">${label}${sortS.k === key ? (sortS.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`;
+  const row = (g, cls = '') => `<tr class="${cls}">${keys.map((_, i) => `<td>${esc(g.vals[i])}</td>`).join('')}
+    <td class="n ${g.n < 10 ? 'low' : ''}">${g.n}</td>
+    <td class="n"><span class="pct"><i style="width:${g.pct}%"></i><span>${fmt(g.pct)}%</span></span></td>
+    <td class="n">${fmt(g.mean, 2)}</td><td class="n">${fmt(g.median, 1)}</td></tr>`;
+  el.innerHTML = `<div class="scroll"><table><thead><tr>
+    ${keys.map((k2, i) => th('g' + i, GROUPS[k2])).join('')}
+    ${th('n', 'Plays', 'n')}${th('pct', 'Success %', 'n')}${th('mean', 'Mean yds', 'n')}${th('median', 'Median yds', 'n')}</tr></thead>
+    <tbody>${out.map(g => row(g)).join('')}${keys.length ? row({ ...total, vals: keys.map((_, i) => i ? '' : 'All filtered') }, 'total') : ''}</tbody></table></div>
+    <p class="note">Success = kept the ball and either got a first down (gain ≥ yards to go, or flagged 1st down) or scored a touchdown.
+    Counts scrimmage plays only: kneels, 2-point tries, penalty-only rows and no-plays are left out. Grey play counts are under 10.</p>`;
+  el.querySelectorAll('th[data-s]').forEach(h => h.onclick = () => {
+    const key = h.dataset.s; sortS = { k: key, dir: sortS.k === key ? -sortS.dir : (key.startsWith('g') ? 1 : -1) }; render();
+  });
+}
+
+const TCOLS = [['cfl_id','Game','n'],['qtr','Q'],['clock','Clock'],['offense','Off'],['defense','Def'],['down','Dn','n'],['distance','Dist','n'],
+  ['yardline','Yardline'],['play_type','Type'],['qb','QB'],['ballcarrier','Ballcarrier / target'],['yards','Yds','n'],['result','Result'],
+  ['points','Pts','n'],['success','Succ','n'],['flags','Flags'],['description','Description']];
+function renderTable(st, rows){
+  const el = $('#view-table'), LIMIT = 1500;
+  let r2 = rows;
+  if (sortT.k) r2 = [...rows].sort((a, b) => ((a[sortT.k] ?? -1e9) > (b[sortT.k] ?? -1e9) ? 1 : -1) * sortT.dir);
+  const shown = r2.slice(0, LIMIT);
+  el.innerHTML = `<div class="scroll"><table><thead><tr>${TCOLS.map(([k, h, c]) =>
+    `<th data-t="${k}" class="${c || ''} ${sortT.k === k ? 'sorted' : ''}">${h}${sortT.k === k ? (sortT.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr></thead>
+    <tbody>${shown.map(r => `<tr>${TCOLS.map(([k, , c]) => {
+      const v = k === 'qtr' ? qtrLabel(r.qtr) : r[k];
+      return `<td class="${c || ''} ${k === 'description' ? 'desc' : ''} ${k === 'flags' ? 'flag' : ''}">${esc(v)}</td>`;
+    }).join('')}</tr>`).join('')}</tbody></table></div>
+    ${rows.length > LIMIT ? `<p class="note">Showing the first ${LIMIT} of ${rows.length} plays — narrow the filters to see the rest.</p>` : ''}`;
+  el.querySelectorAll('th[data-t]').forEach(h => h.onclick = () => {
+    const k = h.dataset.t; sortT = { k, dir: sortT.k === k ? -sortT.dir : 1 }; render();
+  });
+}
+
+function render(){
+  const st = state(), active = isActive(st) || st.groups.length > 0;
+  $$('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === tab));
+  $('#view-summary').hidden = tab !== 'summary'; $('#view-table').hidden = tab !== 'table';
+  const msg = '<div class="empty"><b>Pick at least one filter or a group by</b> to see results.<br>Everything is hidden until then so you don’t stare at 8,000 plays.</div>';
+  if (!active) { $('#view-summary').innerHTML = msg; $('#view-table').innerHTML = msg; $('#count').textContent = ''; return; }
+  const rows = filtered(st);
+  $('#count').textContent = `${rows.length.toLocaleString()} of ${ALL.length.toLocaleString()} plays match`;
+  if (!rows.length) { const e = '<div class="empty">No plays match these filters.</div>'; $('#view-summary').innerHTML = e; $('#view-table').innerHTML = e; return; }
+  if (tab === 'summary') renderSummary(st, rows); else renderTable(st, rows);
+}
+
+/* ---------- init ---------- */
+function fillSelect(id, values, label){
+  $(id).innerHTML = `<option value="">All</option>` + values.map(v => `<option value="${esc(v)}">${esc(label ? label(v) : v)}</option>`).join('');
+}
+$$('.tab').forEach(t => t.onclick = () => { tab = t.dataset.tab; render(); });
+$('#clear').onclick = () => {
+  $$('.filters select').forEach(s => s.value = ''); $$('#f-down input').forEach(i => i.checked = true);
+  $$('#group-by input').forEach(i => i.checked = false); Object.values(sliders).forEach(s => s.reset()); render();
+};
+$$('.filters select, #f-down input, #group-by input, #excl-flagged').forEach(i => i.addEventListener('change', render));
+
+fetch('/plays.json').then(r => r.json()).then(rows => {
+  ALL = rows;
+  const uniq = k => [...new Set(ALL.map(r => r[k]).filter(v => v != null))].sort();
+  fillSelect('#f-offense', uniq('offense')); fillSelect('#f-defense', uniq('defense'));
+  fillSelect('#f-qtr', uniq('qtr'), q => qtrLabel(q));
+  fillSelect('#f-qb', uniq('qb')); fillSelect('#f-ballcarrier', uniq('ballcarrier'));
+  const games = new Set(ALL.map(r => r.game_id)).size;
+  $('#meta').textContent = `${ALL.length.toLocaleString()} scrimmage plays · ${games} games · 2026 regular season`;
+  render();
+});
+</script>
+</body>
+</html>
